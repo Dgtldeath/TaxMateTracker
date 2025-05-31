@@ -7,6 +7,8 @@
 
 import SwiftUI
 import SwiftData
+import CoreLocation
+
 
 @main
 struct TaxMate_TrackerApp: App {
