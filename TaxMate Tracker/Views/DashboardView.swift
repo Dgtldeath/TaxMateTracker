@@ -13,6 +13,7 @@ struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var expenseEntries: [ExpenseEntry]
     @Query private var mileageEntries: [MileageEntry]
+    @State private var showingMileageSheet = false
     
     private var monthlyIncome: Double {
         let calendar = Calendar.current
@@ -44,6 +45,16 @@ struct DashboardView: View {
             .reduce(0) { $0 + $1.distance }
     }
     
+    private var mileageYTD: Double {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfYear = calendar.dateInterval(of: .year, for: now)?.start ?? now
+        
+        return mileageEntries
+            .filter { $0.startDate >= startOfYear && $0.isBusinessTrip }
+            .reduce(0) { $0 + $1.distance }
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -68,8 +79,8 @@ struct DashboardView: View {
                         )
                         
                         SummaryCard(
-                            title: "Monthly Mileage",
-                            value: monthlyMileage,
+                            title: "Mileage YTD",
+                            value: mileageYTD,
                             icon: "speedometer",
                             color: .blue,
                             isDistance: true
@@ -111,7 +122,8 @@ struct DashboardView: View {
                                 icon: "car",
                                 color: .blue
                             ) {
-                                // Navigate to Mileage Tracking
+                                // Navigate to Mileage Tracking and show sheet
+                                showingMileageSheet = true
                             }
                         }
                     }
@@ -148,6 +160,9 @@ struct DashboardView: View {
             }
             .navigationTitle("TaxMate Tracker")
             .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showingMileageSheet) {
+                AddMileageTrackingFormView()
+            }
         }
     }
 }

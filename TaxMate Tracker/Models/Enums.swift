@@ -26,3 +26,13 @@ enum ReportPeriod: String, CaseIterable {
     case sixMonths = "6 Months"
     case twelveMonths = "12 Months"
 }
+
+enum TripPurpose: String, CaseIterable, Codable {
+    case clientMeeting = "Client Meeting"
+    case delivery = "Delivery"
+    case businessTravel = "Business Travel"
+    case supplies = "Getting Supplies"
+    case bankBusiness = "Bank/Business Errands"
+    case networking = "Networking Event"
+    case other = "Other Business"
+}
