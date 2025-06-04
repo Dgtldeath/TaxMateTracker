@@ -12,6 +12,7 @@ import SwiftData
 struct ContentView: View {
     @State private var selectedTab = 0
     
+    // Git Translator Test
     var body: some View {
         TabView(selection: $selectedTab) {
             DashboardView()

@@ -14,7 +14,11 @@ import CoreLocation
 struct TaxMate_TrackerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+                Item.self,
+                ExpenseEntry.self,
+                MileageEntry.self,
+                Category.self,
+                UserProfile.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

@@ -11,6 +11,7 @@ import SwiftData
 // MARK: - Dashboard View
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
+    
     @Query private var expenseEntries: [ExpenseEntry]
     @Query private var mileageEntries: [MileageEntry]
     @State private var showingMileageSheet = false
