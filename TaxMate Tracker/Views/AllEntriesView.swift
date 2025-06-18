@@ -1,3 +1,11 @@
+//
+//  AllEntriesView.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/14/25.
+//
+
+
 import SwiftUI
 import SwiftData
 
@@ -9,6 +17,8 @@ struct AllEntriesView: View {
     @State private var selectedFilter = EntryFilter.all
     @State private var showingDeductibleChecker = false
     @State private var selectedExpense: ExpenseEntry?
+    
+    @StateObject private var coinManager = CoinManager()  // ✅ Add coin manager
     
     enum EntryFilter: String, CaseIterable {
         case all = "All"
@@ -39,18 +49,54 @@ struct AllEntriesView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
                 
+                // ✅ Coin Balance Display
+                HStack {
+                    Image(systemName: "circle.fill")
+                        .foregroundColor(.yellow)
+                        .font(.caption)
+                    
+                    Text("Coins Remaining: \(coinManager.currentCoins) Coins")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+                
                 // Entries List
                 List {
                     ForEach(filteredEntries) { entry in
                         EnhancedEntryRowView(
                             entry: entry,
                             onDeductibleCheck: { expense in
-                                selectedExpense = expense
-                                showingDeductibleChecker = true
+                                print("DEBUG: Setting selectedExpense to: \(expense.category) - $\(expense.amount)")
+                                print("DEBUG: expense.isIncome = \(expense.isIncome)")
+                                
+                                // Reset states first
+                                showingDeductibleChecker = false
+                                selectedExpense = nil
+                                
+                                // Small delay to ensure clean state
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    selectedExpense = expense
+                                    showingDeductibleChecker = true
+                                    print("DEBUG: Sheet should open now")
+                                }
                             }
                         )
                     }
                     .onDelete(perform: deleteEntries)
+                }
+                .overlay {
+                    if filteredEntries.isEmpty {
+                        EmptyStateView(
+                            icon: selectedFilter == .income ? "plus.circle" : "minus.circle",
+                            title: "No Data",
+                            subtitle: "No entries found"
+                        )
+                    }
                 }
             }
             .navigationTitle("All Entries")
@@ -63,8 +109,26 @@ struct AllEntriesView: View {
                 }
             }
             .sheet(isPresented: $showingDeductibleChecker) {
-                if let expense = selectedExpense {
-                    DeductibleCheckerView(expense: expense)
+                Group {
+                    if let expense = selectedExpense {
+                        DeductibleCheckerView(expense: expense)
+                    } else {
+                        VStack {
+                            Text("Error: No expense selected")
+                            Text("This is a debug screen")
+                            Button("Close") {
+                                showingDeductibleChecker = false
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .onChange(of: showingDeductibleChecker) { isShowing in
+                print("DEBUG: showingDeductibleChecker changed to: \(isShowing)")
+                if !isShowing {
+                    // Clear selectedExpense when sheet closes
+                    selectedExpense = nil
                 }
             }
         }
@@ -72,7 +136,11 @@ struct AllEntriesView: View {
     
     private func deleteEntries(offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filteredEntries[index])
+            let entryToDelete = filteredEntries[index]
+            // Find the entry in the original array and delete it
+            if let originalIndex = allEntries.firstIndex(where: { $0.id == entryToDelete.id }) {
+                modelContext.delete(allEntries[originalIndex])
+            }
         }
         
         do {

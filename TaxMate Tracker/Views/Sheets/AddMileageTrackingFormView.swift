@@ -21,8 +21,25 @@ struct AddMileageTrackingFormView: View {
     @State private var isBusinessTrip = true
     @State private var tripDate = Date()
     
-    // UserDefaults for last distance suggestion
+    // UserDefaults for suggestions
     @AppStorage("lastMileageDistance") private var lastDistance: Double = 0.0
+    @AppStorage("recentStartLocations") private var recentStartLocationsData: Data = Data()
+    @AppStorage("recentEndLocations") private var recentEndLocationsData: Data = Data()
+    
+    // Computed properties for recent locations
+    private var recentStartLocations: [String] {
+        if let locations = try? JSONDecoder().decode([String].self, from: recentStartLocationsData) {
+            return Array(locations.prefix(3)) // Keep last 3
+        }
+        return []
+    }
+    
+    private var recentEndLocations: [String] {
+        if let locations = try? JSONDecoder().decode([String].self, from: recentEndLocationsData) {
+            return Array(locations.prefix(3)) // Keep last 3
+        }
+        return []
+    }
     
     var body: some View {
         NavigationView {
@@ -51,18 +68,67 @@ struct AddMileageTrackingFormView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    // Quick distance suggestion
                     if lastDistance > 0 {
                         Button("Use last distance: \(String(format: "%.1f", lastDistance)) mi") {
                             distance = String(format: "%.1f", lastDistance)
                         }
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(AppTheme.accentGreen.opacity(0.1))
                         .foregroundColor(AppTheme.accentGreen)
+                        .cornerRadius(6)
                     }
                 }
                 
                 Section("Locations") {
-                    TextField("From (optional)", text: $startLocation)
-                    TextField("To (optional)", text: $endLocation)
+                    VStack(alignment: .leading, spacing: 8) {
+                        TextField("From (optional)", text: $startLocation)
+                        
+                        // ✅ Quick buttons for recent start locations
+                        if !recentStartLocations.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(recentStartLocations, id: \.self) { location in
+                                        Button(location) {
+                                            startLocation = location
+                                        }
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(AppTheme.accentGreen.opacity(0.1))
+                                        .foregroundColor(AppTheme.accentGreen)
+                                        .cornerRadius(6)
+                                    }
+                                }
+                                .padding(.horizontal, 4)
+                            }
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        TextField("To (optional)", text: $endLocation)
+                        
+                        // ✅ Quick buttons for recent end locations
+                        if !recentEndLocations.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(recentEndLocations, id: \.self) { location in
+                                        Button(location) {
+                                            endLocation = location
+                                        }
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(AppTheme.accentGreen.opacity(0.1))
+                                        .foregroundColor(AppTheme.accentGreen)
+                                        .cornerRadius(6)
+                                    }
+                                }
+                                .padding(.horizontal, 4)
+                            }
+                        }
+                    }
                 }
                 
                 Section("Notes") {
@@ -105,14 +171,46 @@ struct AddMileageTrackingFormView: View {
         mileageEntry.endDate = tripDate
         modelContext.insert(mileageEntry)
         
-        // Save last distance for quick suggestion
+        // Save distance for next time
         lastDistance = distanceValue
+        
+        // ✅ Save locations for quick access
+        saveRecentLocation(startLocation, to: \.recentStartLocationsData)
+        saveRecentLocation(endLocation, to: \.recentEndLocationsData)
         
         do {
             try modelContext.save()
             dismiss()
         } catch {
             print("Failed to save mileage entry: \(error)")
+        }
+    }
+    
+    // ✅ Helper function to save recent locations
+    private func saveRecentLocation(_ location: String, to keyPath: ReferenceWritableKeyPath<AddMileageTrackingFormView, Data>) {
+        guard !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        var locations: [String]
+        if let existing = try? JSONDecoder().decode([String].self, from: self[keyPath: keyPath]) {
+            locations = existing
+        } else {
+            locations = []
+        }
+        
+        // Remove if already exists (to move to front)
+        locations.removeAll { $0.lowercased() == trimmedLocation.lowercased() }
+        
+        // Add to front
+        locations.insert(trimmedLocation, at: 0)
+        
+        // Keep only last 3
+        locations = Array(locations.prefix(3))
+        
+        // Save back
+        if let data = try? JSONEncoder().encode(locations) {
+            self[keyPath: keyPath] = data
         }
     }
 }

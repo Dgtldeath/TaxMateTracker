@@ -12,11 +12,20 @@ import UIKit
 struct ImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
     @Environment(\.dismiss) private var dismiss
+    let sourceType: UIImagePickerController.SourceType
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
-        picker.sourceType = .camera // Change to .photoLibrary if you prefer
+        
+        // ✅ Check if source type is available
+        if UIImagePickerController.isSourceTypeAvailable(sourceType) {
+            picker.sourceType = sourceType
+        } else {
+            // Fallback to photo library if camera not available (simulator)
+            picker.sourceType = .photoLibrary
+        }
+        
         picker.allowsEditing = true
         return picker
     }

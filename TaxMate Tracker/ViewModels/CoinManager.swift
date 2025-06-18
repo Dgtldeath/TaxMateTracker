@@ -1,3 +1,11 @@
+//
+//  CoinManager.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/16/25.
+//
+
+
 import Foundation
 
 class CoinManager: ObservableObject {

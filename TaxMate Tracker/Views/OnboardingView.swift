@@ -1,3 +1,11 @@
+//
+//  OnboardingView.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/15/25.
+//
+
+
 import SwiftUI
 
 struct OnboardingView: View {

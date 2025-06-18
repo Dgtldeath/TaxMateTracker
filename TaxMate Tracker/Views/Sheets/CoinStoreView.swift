@@ -1,3 +1,12 @@
+//
+//  CoinStoreView.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/16/25.
+//
+
+import SwiftUI
+
 struct CoinStoreView: View {
     @ObservedObject var storeManager: StoreManager
     @ObservedObject var coinManager: CoinManager
@@ -38,26 +47,73 @@ struct CoinStoreView: View {
                         }
                         
                         Button(action: {
-                            storeManager.purchaseCoins()
+                            Task {
+                                await storeManager.purchaseCoins()
+                            }
                         }) {
-                            Text("Purchase for \(product.localizedPrice ?? "$0.99")")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(AppTheme.accentGreen)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
+                            HStack {
+                                if storeManager.isPurchasing {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "sparkles")
+                                }
+                                Text(storeManager.isPurchasing ? "Processing..." : "Purchase for \(product.displayPrice)")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(storeManager.isPurchasing ? Color.gray : AppTheme.accentGreen)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
                         }
-                        .disabled(storeManager.transactionState == .purchasing)
+                        .disabled(storeManager.isPurchasing)
                     }
                     .padding()
                     .background(AppTheme.lightGray)
                     .cornerRadius(12)
+                } else {
+                    VStack {
+                        ProgressView()
+                        Text("Loading products...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
                 }
+                
+                // Restore button
+//                Button("Restore Purchases") {
+//                    Task {
+//                        await storeManager.restorePurchases()
+//                    }
+//                }
+//                .font(.subheadline)
+//                .foregroundColor(AppTheme.accentGreen)
+                
+                // Professional disclaimer
+                VStack(spacing: 4) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                            .font(.caption)
+                        Text("Professional Advice Recommended")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    
+                    Text("AI analysis is for informational purposes only. Consult a qualified tax professional for official advice.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(8)
                 
                 Spacer()
             }
             .padding()
-            .navigationTitle("Get More Coins")
+            .navigationTitle("✨ Get More Coins")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -72,14 +128,8 @@ struct CoinStoreView: View {
         } message: {
             Text(storeManager.errorMessage)
         }
-    }
-}
-
-extension SKProduct {
-    var localizedPrice: String? {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = priceLocale
-        return formatter.string(from: price)
+        .task {
+            await storeManager.loadProducts()
+        }
     }
 }

@@ -1,33 +1,74 @@
+//
+//  DeductibleAPIService.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/14/25.
+//
+
 import Foundation
+import SwiftData
+
+// ✅ Result struct for API response
+struct AIAnalysisResult {
+    let success: Bool
+    let message: String
+    let coinSpent: Bool
+}
 
 class DeductibleAPIService: ObservableObject {
     @Published var isLoading = false
     @Published var response = ""
     @Published var errorMessage = ""
     
-    func checkIfDeductible(expense: ExpenseEntry) async {
-        DispatchQueue.main.async {
+    private let coinManager: CoinManager
+    
+    init(coinManager: CoinManager) {
+        self.coinManager = coinManager
+    }
+    
+    func checkIfDeductible(expense: ExpenseEntry) async -> AIAnalysisResult {
+        // Extract data from expense BEFORE async operations
+        let existingAnalysis = expense.aiAnalysis
+        let expenseAmount = expense.amount
+        let expenseCategory = expense.category
+        let expenseDescription = expense.entryDescription
+        let expenseDate = expense.date
+        let expenseFrequency = expense.frequency
+        
+        // Check if user has existing analysis
+        if !existingAnalysis.isEmpty {
+            await MainActor.run {
+                self.response = existingAnalysis
+                self.isLoading = false
+            }
+            return AIAnalysisResult(success: true, message: existingAnalysis, coinSpent: false)
+        }
+        
+        await MainActor.run {
             self.isLoading = true
             self.response = ""
             self.errorMessage = ""
         }
         
-        guard let url = URL(string: "https://mydomain.com/ai-api/gpt.php") else {
-            DispatchQueue.main.async {
-                self.errorMessage = "Invalid URL"
+        guard let url = URL(string: APIConfig.aiAPIURL) else {
+            let error = "Invalid API URL configuration"
+            await MainActor.run {
+                self.errorMessage = error
                 self.isLoading = false
             }
-            return
+            return AIAnalysisResult(success: false, message: error, coinSpent: false)
         }
         
-        // Prepare the request data
         let requestData: [String: Any] = [
-            "amount": expense.amount,
-            "category": expense.category,
-            "description": expense.entryDescription,
-            "date": ISO8601DateFormatter().string(from: expense.date),
-            "frequency": expense.frequency.rawValue,
-            "query": "Is this expense tax deductible for a self-employed individual? Please provide a detailed explanation."
+            "app": APIConfig.appSlug,
+            "modelType": APIConfig.defaultModelType,
+            "expenseData": [
+                "amount": expenseAmount,
+                "category": expenseCategory,
+                "description": expenseDescription,
+                "date": ISO8601DateFormatter().string(from: expenseDate),
+                "frequency": expenseFrequency.rawValue
+            ]
         ]
         
         do {
@@ -37,28 +78,63 @@ class DeductibleAPIService: ObservableObject {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = jsonData
+            request.timeoutInterval = APIConfig.requestTimeout
             
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            if let httpResponse = response as? HTTPURLResponse,
-               httpResponse.statusCode == 200 {
-                if let responseString = String(data: data, encoding: .utf8) {
-                    DispatchQueue.main.async {
-                        self.response = responseString
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200 {
+                    if let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let messageText = jsonResponse["response"] as? String {
+                        
+                        // Spend coin only on successful analysis
+                        let coinSpent = coinManager.spendCoin()
+                        
+                        if coinSpent {
+                            await MainActor.run {
+                                self.response = messageText
+                                self.isLoading = false
+                            }
+                            return AIAnalysisResult(success: true, message: messageText, coinSpent: true)
+                        } else {
+                            let error = "Unable to spend coin. Please try again."
+                            await MainActor.run {
+                                self.errorMessage = error
+                                self.isLoading = false
+                            }
+                            return AIAnalysisResult(success: false, message: error, coinSpent: false)
+                        }
+                    } else {
+                        let error = "Invalid response format from server"
+                        await MainActor.run {
+                            self.errorMessage = error
+                            self.isLoading = false
+                        }
+                        return AIAnalysisResult(success: false, message: error, coinSpent: false)
+                    }
+                } else {
+                    let error = "Server error (Code: \(httpResponse.statusCode))"
+                    await MainActor.run {
+                        self.errorMessage = error
                         self.isLoading = false
                     }
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Server error"
-                    self.isLoading = false
+                    return AIAnalysisResult(success: false, message: error, coinSpent: false)
                 }
             }
         } catch {
-            DispatchQueue.main.async {
-                self.errorMessage = "Network error: \(error.localizedDescription)"
+            let errorMsg = "Network error: \(error.localizedDescription)"
+            await MainActor.run {
+                self.errorMessage = errorMsg
                 self.isLoading = false
             }
+            return AIAnalysisResult(success: false, message: errorMsg, coinSpent: false)
         }
+        
+        let error = "Unknown error occurred"
+        await MainActor.run {
+            self.errorMessage = error
+            self.isLoading = false
+        }
+        return AIAnalysisResult(success: false, message: error, coinSpent: false)
     }
 }

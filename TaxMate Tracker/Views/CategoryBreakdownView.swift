@@ -1,3 +1,14 @@
+//
+//  CategoryBreakdownView.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/15/25.
+//
+
+import SwiftUI
+import SwiftData
+
+
 struct CategoryBreakdownView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var expenseEntries: [ExpenseEntry]
@@ -104,11 +115,11 @@ struct CategoryBreakdownView: View {
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Export") {
-                        exportCategoryBreakdown()
-                    }
-                }
+//                ToolbarItem(placement: .navigationBarTrailing) {
+//                    Button("Export") {
+//                        exportCategoryBreakdown()
+//                    }
+//                }
             }
         }
     }

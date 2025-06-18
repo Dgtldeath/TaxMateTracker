@@ -1,54 +1,115 @@
+//
+//  StoreManager.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/16/25.
+//
+
+
 import Foundation
 import StoreKit
 
-class StoreManager: NSObject, ObservableObject {
-    @Published var products: [SKProduct] = []
-    @Published var transactionState: SKPaymentTransactionState?
+
+@MainActor
+class StoreManager: ObservableObject {
+    @Published var products: [Product] = []
     @Published var hasError = false
     @Published var errorTitle = ""
     @Published var errorMessage = ""
+    @Published var isPurchasing = false
     
     private let coinManager: CoinManager
     
     // Product identifier for 15 coins at $0.99
-    private let coinProductID = "com.yourapp.taxmate.coins15"
+    private let coinProductID = APIConfig.storeProductID
     
     init(coinManager: CoinManager) {
         self.coinManager = coinManager
-        super.init()
-        SKPaymentQueue.default().add(self)
-        getProducts()
-    }
-    
-    deinit {
-        SKPaymentQueue.default().remove(self)
-    }
-    
-    func getProducts() {
-        guard !coinProductID.isEmpty else { return }
         
-        let request = SKProductsRequest(productIdentifiers: Set([coinProductID]))
-        request.delegate = self
-        request.start()
+        Task {
+            await loadProducts()
+        }
     }
     
-    func purchaseCoins() {
+    func loadProducts() async {
+        do {
+            let products = try await Product.products(for: [coinProductID])
+            self.products = products
+        } catch {
+            showError(title: "Products Failed to Load", message: error.localizedDescription)
+        }
+    }
+    
+    func purchaseCoins() async {
         guard let product = products.first else {
             showError(title: "Product Not Found", message: "Unable to find coin package.")
             return
         }
         
-        guard SKPaymentQueue.canMakePayments() else {
-            showError(title: "Purchases Disabled", message: "In-app purchases are disabled on this device.")
-            return
-        }
+        isPurchasing = true
         
-        let payment = SKPayment(product: product)
-        SKPaymentQueue.default().add(payment)
+        do {
+            let result = try await product.purchase()
+            
+            switch result {
+            case .success(let verification):
+                let transaction = try checkVerified(verification)
+                
+                // Award coins for successful purchase
+                coinManager.addCoins(15)
+                
+                // Mark transaction as finished
+                await transaction.finish()
+                
+                isPurchasing = false
+                
+            case .userCancelled:
+                isPurchasing = false
+                
+            case .pending:
+                isPurchasing = false
+                showError(title: "Purchase Pending", message: "Your purchase is pending approval.")
+                
+            @unknown default:
+                isPurchasing = false
+                showError(title: "Unknown Result", message: "An unknown purchase result occurred.")
+            }
+        } catch {
+            isPurchasing = false
+            showError(title: "Purchase Failed", message: error.localizedDescription)
+        }
     }
     
-    func restorePurchases() {
-        SKPaymentQueue.default().restoreCompletedTransactions()
+    func restorePurchases() async {
+        do {
+            try await AppStore.sync()
+            
+            // Check for any unfinished transactions
+            for await result in Transaction.currentEntitlements {
+                do {
+                    let transaction = try checkVerified(result)
+                    
+                    // Handle any consumable purchases that weren't processed
+                    if transaction.productID == coinProductID {
+                        // Award coins if needed
+                        await transaction.finish()
+                    }
+                } catch {
+                    print("Failed to process transaction: \(error)")
+                }
+            }
+        } catch {
+            showError(title: "Restore Failed", message: error.localizedDescription)
+        }
+    }
+    
+    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+        switch result {
+        case .unverified:
+            throw StoreError.failedVerification
+        case .verified(let safe):
+            return safe
+        }
     }
     
     private func showError(title: String, message: String) {
@@ -58,49 +119,6 @@ class StoreManager: NSObject, ObservableObject {
     }
 }
 
-// MARK: - SKProductsRequestDelegate
-extension StoreManager: SKProductsRequestDelegate {
-    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
-        DispatchQueue.main.async {
-            self.products = response.products
-        }
-    }
-}
-
-// MARK: - SKPaymentTransactionObserver
-extension StoreManager: SKPaymentTransactionObserver {
-    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
-        for transaction in transactions {
-            switch transaction.transactionState {
-            case .purchasing:
-                transactionState = .purchasing
-                
-            case .purchased:
-                queue.finishTransaction(transaction)
-                transactionState = .purchased
-                
-                // Award 15 coins for successful purchase
-                coinManager.addCoins(15)
-                
-            case .restored:
-                queue.finishTransaction(transaction)
-                transactionState = .restored
-                
-            case .failed:
-                if let error = transaction.error as? SKError {
-                    if error.code != .paymentCancelled {
-                        showError(title: "Purchase Failed", message: error.localizedDescription)
-                    }
-                }
-                queue.finishTransaction(transaction)
-                transactionState = .failed
-                
-            case .deferred:
-                transactionState = .deferred
-                
-            @unknown default:
-                break
-            }
-        }
-    }
+enum StoreError: Error {
+    case failedVerification
 }

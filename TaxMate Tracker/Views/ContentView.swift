@@ -11,9 +11,72 @@ import SwiftData
 // MARK: - Main Content View
 struct ContentView: View {
     @State private var selectedTab = 0
+    @State private var showingOnboarding = false
     
-    // Git Translator Test
     var body: some View {
+        Group {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                // iPad: Use NavigationSplitView
+                iPadLayout
+                
+            } else {
+                // iPhone: Use TabView
+                iPhoneLayout
+            }
+        }
+        .accentColor(AppTheme.accentGreen)
+        .onAppear {
+            if !UserDefaults.standard.bool(forKey: "hasSeenOnboarding") {
+                showingOnboarding = true
+            }
+        }
+        .sheet(isPresented: $showingOnboarding) {
+            OnboardingView()
+        }
+    }
+    
+    @ViewBuilder
+    private var iPadLayout: some View {
+        NavigationSplitView {
+            List {
+                NavigationLink(destination: DashboardView()) {
+                    Label("Dashboard", systemImage: "house.fill")
+                }
+                .tag(0)
+                
+                NavigationLink(destination: MileageTrackingView()) {
+                    Label("Mileage", systemImage: "car.fill")
+                }
+                .tag(1)
+                
+                NavigationLink(destination: AddEntryView()) {
+                    Label("Add Entry", systemImage: "plus.circle.fill")
+                }
+                .tag(2)
+                
+                NavigationLink(destination: ReportsView()) {
+                    Label("Reports", systemImage: "chart.bar.fill")
+                }
+                .tag(3)
+                
+                NavigationLink(destination: SettingsView()) {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+                .tag(4)
+            }
+            .navigationTitle("TaxMate")
+            .listStyle(SidebarListStyle())
+        } detail: {
+            // Default content for iPad with full width
+            DashboardView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity) // ✅ Force full width
+                .navigationBarHidden(false)
+        }
+        .navigationSplitViewStyle(.balanced) // ✅ Use balanced style for better width distribution
+    }
+    
+    @ViewBuilder
+    private var iPhoneLayout: some View {
         TabView(selection: $selectedTab) {
             DashboardView()
                 .tabItem {
@@ -22,10 +85,10 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            CategoriesView()
+            MileageTrackingView()
                 .tabItem {
-                    Image(systemName: "folder.fill")
-                    Text("Categories")
+                    Image(systemName: "car.fill")
+                    Text("Mileage")
                 }
                 .tag(1)
             
@@ -36,32 +99,19 @@ struct ContentView: View {
                 }
                 .tag(2)
             
-            MileageTrackingView()
-                .tabItem {
-                    Image(systemName: "car.fill")
-                    Text("Mileage")
-                }
-                .tag(3)
-            
             ReportsView()
                 .tabItem {
                     Image(systemName: "chart.bar.fill")
                     Text("Reports")
                 }
-                .tag(4)
+                .tag(3)
             
             SettingsView()
                 .tabItem {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-                .tag(5)
+                .tag(4)
         }
-        .accentColor(AppTheme.accentGreen)
     }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

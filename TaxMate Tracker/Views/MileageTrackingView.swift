@@ -14,33 +14,50 @@ struct MileageTrackingView: View {
     @State private var showingAddSheet = false
     
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(mileageEntries) { entry in
-                    MileageRowView(entry: entry)
-                }
-                .onDelete(perform: deleteMileageEntries)
+        Group {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                mileageList
+                    .navigationTitle(Text("Mileage Tracking"))
             }
-            .navigationTitle("Mileage")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingAddSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+            else {
+                NavigationView {
+                    mileageList
+                        .navigationTitle(Text("Mileage Tracking"))
                 }
             }
-            .sheet(isPresented: $showingAddSheet) {
-                AddMileageTrackingFormView()
+        }
+        .sheet(isPresented: $showingAddSheet) {
+            AddMileageTrackingFormView()
+        }
+        .overlay {
+            if mileageEntries.isEmpty {
+                EmptyStateView(
+                    icon: "car",
+                    title: "No mileage entries",
+                    subtitle: "Track your business trips for tax deductions"
+                )
             }
-            .overlay {
-                if mileageEntries.isEmpty {
-                    EmptyStateView(
-                        icon: "car",
-                        title: "No mileage entries",
-                        subtitle: "Track your business trips for tax deductions"
-                    )
+        }
+        
+    }
+    
+    @ViewBuilder
+    private var mileageList: some View {
+        List {
+            ForEach(mileageEntries) { entry in
+                MileageRowView(entry: entry)
+            }
+            .onDelete(perform: deleteMileageEntries)
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showingAddSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                        .padding(5)
+                        .background(.ultraThickMaterial)
+                        .clipShape(Circle())
                 }
             }
         }

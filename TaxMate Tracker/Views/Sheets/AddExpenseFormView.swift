@@ -1,3 +1,11 @@
+//
+//  AddExpenseFormView.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/6/25.
+//
+
+
 import SwiftUI
 import SwiftData
 
@@ -12,6 +20,7 @@ struct AddExpenseFormView: View {
     @State private var expenseDate = Date()
     @State private var showingImagePicker = false
     @State private var receiptImage: UIImage?
+    @State private var imageSourceType: UIImagePickerController.SourceType = .camera
     
     // Default expense categories
     private let expenseCategories = [
@@ -73,6 +82,7 @@ struct AddExpenseFormView: View {
                                 Text("Receipt attached")
                                     .font(.subheadline)
                                 Button("Change Photo") {
+                                    imageSourceType = .camera
                                     showingImagePicker = true
                                 }
                                 .font(.caption)
@@ -82,21 +92,53 @@ struct AddExpenseFormView: View {
                             Spacer()
                             
                             Button("Remove") {
-                                receiptImage = nil
+                                self.receiptImage = nil
                             }
                             .font(.caption)
                             .foregroundColor(.red)
                         }
                     } else {
-                        Button(action: {
-                            showingImagePicker = true
-                        }) {
-                            HStack {
-                                Image(systemName: "camera")
-                                    .foregroundColor(AppTheme.accentGreen)
-                                Text("Add Receipt Photo")
-                                    .foregroundColor(AppTheme.accentGreen)
+                        VStack(spacing: 12) {
+                            // Camera Button
+                            Button(action: {
+                                imageSourceType = .camera
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { // ✅ Small delay
+                                    showingImagePicker = true
+                                    print("camera")
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "camera")
+                                    Text("Take Receipt Photo")
+                                }
+                                .foregroundColor(AppTheme.accentGreen)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(AppTheme.accentGreen.opacity(0.1))
+                                .cornerRadius(8)
                             }
+                            .buttonStyle(PlainButtonStyle()) // ✅ Fix button style
+                            
+                            // Photo Library Button
+                            Button(action: {
+                                imageSourceType = .photoLibrary
+                                showingImagePicker = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { // ✅ Small delay
+                                    showingImagePicker = true
+                                    print("photo library")
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "photo")
+                                    Text("Choose from Photo Library")
+                                }
+                                .foregroundColor(AppTheme.accentGreen)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(AppTheme.accentGreen.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(PlainButtonStyle()) // ✅ Fix button style
                         }
                     }
                 }
@@ -129,7 +171,7 @@ struct AddExpenseFormView: View {
                 }
             }
             .sheet(isPresented: $showingImagePicker) {
-                ImagePicker(selectedImage: $receiptImage)
+                ImagePicker(selectedImage: $receiptImage, sourceType: imageSourceType)
             }
         }
     }

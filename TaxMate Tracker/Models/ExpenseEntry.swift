@@ -18,8 +18,9 @@ final class ExpenseEntry {
     var entryDescription: String
     var receiptImageData: Data?
     var isIncome: Bool
+    var aiAnalysis: String = ""
     
-    init(amount: Double, date: Date, category: String, frequency: EntryFrequency, description: String, receiptImageData: Data? = nil, isIncome: Bool = false) {
+    init(amount: Double, date: Date, category: String, frequency: EntryFrequency, description: String, receiptImageData: Data? = nil, isIncome: Bool = false, aiAnalysis: String = "") {
         self.amount = amount
         self.date = date
         self.category = category

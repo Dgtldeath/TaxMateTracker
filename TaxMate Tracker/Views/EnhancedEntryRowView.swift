@@ -1,3 +1,12 @@
+//
+//  EnhancedEntryRowView.swift
+//  TaxMate Tracker
+//
+//  Created by Adam Gumm on 6/14/25.
+//
+
+import SwiftUI
+
 struct EnhancedEntryRowView: View {
     let entry: ExpenseEntry
     let onDeductibleCheck: (ExpenseEntry) -> Void
@@ -30,17 +39,29 @@ struct EnhancedEntryRowView: View {
                     Text(entry.frequency.rawValue)
                         .font(.caption)
                         .foregroundColor(AppTheme.textSecondary)
+                    
+                    // Entry type badge
+                    Text(entry.isIncome ? "Income" : "Expense")
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(entry.isIncome ? AppTheme.accentGreen.opacity(0.2) : Color.red.opacity(0.2))
+                        .foregroundColor(entry.isIncome ? AppTheme.accentGreen : .red)
+                        .cornerRadius(4)
                 }
             }
             
-            // Show deductible button only for expenses
+            // ONLY show deductible button for expenses (not income)
             if !entry.isIncome {
                 HStack {
                     Spacer()
-                    Button("Ask if Deductible") {
+                    Button(action: {
                         onDeductibleCheck(entry)
+                    }) {
+                        Label("Ask if Deductible (-1 Coin)", systemImage: "sparkles")
+                            .font(.caption)
+                            .labelStyle(.titleAndIcon)
                     }
-                    .font(.caption)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(AppTheme.accentGreen.opacity(0.1))

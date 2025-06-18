@@ -14,7 +14,7 @@ struct AddEntryView: View {
     @State private var animateBackground = false
     
     var body: some View {
-        NavigationView {
+        
             ZStack {
                 // Animated Background
                 LinearGradient(
@@ -32,204 +32,21 @@ struct AddEntryView: View {
                     value: animateBackground
                 )
                 
-                ScrollView {
-                    VStack(spacing: 40) {
-                        // Header Section
-                        VStack(spacing: 16) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 60))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [AppTheme.accentGreen, AppTheme.primaryNavy],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .scaleEffect(animateButtons ? 1.1 : 1.0)
-                                .animation(
-                                    Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true),
-                                    value: animateButtons
-                                )
-                            
-                            Text("Add Financial Entry")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundColor(AppTheme.primaryNavy)
-                            
-                            Text("Track your business income and expenses for tax deductions")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
-                        .opacity(animateButtons ? 1 : 0)
-                        .offset(y: animateButtons ? 0 : -20)
-                        
-                        // Action Buttons
-                        VStack(spacing: 24) {
-                            // Add Income Button
-                            Button(action: {
-                                impactFeedback()
-                                showingIncomeSheet = true
-                            }) {
-                                HStack(spacing: 16) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(AppTheme.accentGreen.opacity(0.2))
-                                            .frame(width: 50, height: 50)
-                                        
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.title2)
-                                            .foregroundColor(AppTheme.accentGreen)
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Add Side Income")
-                                            .font(.headline)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.primary)
-                                        
-                                        Text("Freelance work, consulting, gig economy")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(.title3)
-                                        .foregroundColor(AppTheme.accentGreen)
-                                }
-                                .padding(20)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(.ultraThinMaterial)
-                                        .shadow(color: AppTheme.accentGreen.opacity(0.3), radius: 8, x: 0, y: 4)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [AppTheme.accentGreen.opacity(0.5), AppTheme.accentGreen.opacity(0.1)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                )
-                            }
-                            .buttonStyle(PressedButtonStyle())
-                            .scaleEffect(animateButtons ? 1 : 0.8)
-                            .opacity(animateButtons ? 1 : 0)
-                            
-                            // Add Expense Button
-                            Button(action: {
-                                impactFeedback()
-                                showingExpenseSheet = true
-                            }) {
-                                HStack(spacing: 16) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.red.opacity(0.2))
-                                            .frame(width: 50, height: 50)
-                                        
-                                        Image(systemName: "minus.circle.fill")
-                                            .font(.title2)
-                                            .foregroundColor(.red)
-                                    }
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Add Business Expense")
-                                            .font(.headline)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(.primary)
-                                        
-                                        Text("Office supplies, software, business meals")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .font(.title3)
-                                        .foregroundColor(.red)
-                                }
-                                .padding(20)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(.ultraThinMaterial)
-                                        .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 4)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                )
-                            }
-                            .buttonStyle(PressedButtonStyle())
-                            .scaleEffect(animateButtons ? 1 : 0.8)
-                            .opacity(animateButtons ? 1 : 0)
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // Quick Stats or Tips Section
-                        VStack(spacing: 16) {
-                            HStack {
-                                Image(systemName: "lightbulb.fill")
-                                    .foregroundColor(.orange)
-                                    .font(.title3)
-                                
-                                Text("Pro Tips")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                                
-                                Spacer()
-                            }
-                            
-                            VStack(spacing: 12) {
-                                TipRowView(
-                                    icon: "camera.fill",
-                                    tip: "Always capture receipts for business expenses",
-                                    color: .blue
-                                )
-                                
-                                TipRowView(
-                                    icon: "calendar",
-                                    tip: "Log expenses as they happen for better accuracy",
-                                    color: .purple
-                                )
-                                
-                                TipRowView(
-                                    icon: "sparkles",
-                                    tip: "Use AI analysis to check if expenses are deductible",
-                                    color: AppTheme.accentGreen
-                                )
-                            }
-                        }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        )
-                        .padding(.horizontal, 20)
-                        .scaleEffect(animateButtons ? 1 : 0.9)
-                        .opacity(animateButtons ? 1 : 0)
-                        
-                        Spacer(minLength: 50)
+                Group {
+                    if UIDevice.current.userInterfaceIdiom == .pad {
+                        addEntryViewContent
+                            .navigationTitle("Add Entry")
                     }
-                    .padding(.top, 20)
+                    else {
+                        NavigationView {
+                            addEntryViewContent
+                                .navigationTitle("Add Entry")
+                                .navigationBarTitleDisplayMode(.inline)
+                        }
+                    }
                 }
+                
             }
-            .navigationTitle("Add Entry")
-            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
                     animateButtons = true
@@ -244,6 +61,205 @@ struct AddEntryView: View {
             .sheet(isPresented: $showingExpenseSheet) {
                 AddExpenseFormView()
             }
+        
+    }
+    
+    @ViewBuilder
+    private var addEntryViewContent : some View {
+        ScrollView {
+            VStack(spacing: 40) {
+                // Header Section
+                VStack(spacing: 16) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [AppTheme.accentGreen, AppTheme.primaryNavy],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .scaleEffect(animateButtons ? 1.1 : 1.0)
+                        .animation(
+                            Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                            value: animateButtons
+                        )
+                    
+                    Text("Add Financial Entry")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppTheme.primaryNavy)
+                    
+                    Text("Track your business income and expenses for tax deductions")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .opacity(animateButtons ? 1 : 0)
+                .offset(y: animateButtons ? 0 : -20)
+                
+                // Action Buttons
+                VStack(spacing: 24) {
+                    // Add Income Button
+                    Button(action: {
+                        impactFeedback()
+                        showingIncomeSheet = true
+                    }) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppTheme.accentGreen.opacity(0.2))
+                                    .frame(width: 50, height: 50)
+                                
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(AppTheme.accentGreen)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Add Side Income")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Text("Freelance work, consulting, gig economy")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.title3)
+                                .foregroundColor(AppTheme.accentGreen)
+                        }
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: AppTheme.accentGreen.opacity(0.3), radius: 8, x: 0, y: 4)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [AppTheme.accentGreen.opacity(0.5), AppTheme.accentGreen.opacity(0.1)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                        )
+                    }
+                    .buttonStyle(PressedButtonStyle())
+                    .scaleEffect(animateButtons ? 1 : 0.8)
+                    .opacity(animateButtons ? 1 : 0)
+                    
+                    // Add Expense Button
+                    Button(action: {
+                        impactFeedback()
+                        showingExpenseSheet = true
+                    }) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.red.opacity(0.2))
+                                    .frame(width: 50, height: 50)
+                                
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.red)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Add Business Expense")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Text("Office supplies, software, business meals")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.title3)
+                                .foregroundColor(.red)
+                        }
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 4)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color.red.opacity(0.5), Color.red.opacity(0.1)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                        )
+                    }
+                    .buttonStyle(PressedButtonStyle())
+                    .scaleEffect(animateButtons ? 1 : 0.8)
+                    .opacity(animateButtons ? 1 : 0)
+                }
+                .padding(.horizontal, 20)
+                
+                // Quick Stats or Tips Section
+                VStack(spacing: 16) {
+                    HStack {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundColor(.orange)
+                            .font(.title3)
+                        
+                        Text("Pro Tips")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        Spacer()
+                    }
+                    
+                    VStack(spacing: 12) {
+                        TipRowView(
+                            icon: "camera.fill",
+                            tip: "Always capture receipts for business expenses",
+                            color: .blue
+                        )
+                        
+                        TipRowView(
+                            icon: "calendar",
+                            tip: "Log expenses as they happen for better accuracy",
+                            color: .purple
+                        )
+                        
+                        TipRowView(
+                            icon: "sparkles",
+                            tip: "Use AI analysis to check if expenses are deductible",
+                            color: AppTheme.accentGreen
+                        )
+                    }
+                }
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                )
+                .padding(.horizontal, 20)
+                .scaleEffect(animateButtons ? 1 : 0.9)
+                .opacity(animateButtons ? 1 : 0)
+                
+                Spacer(minLength: 50)
+            }
+            .padding(.top, 20)
         }
     }
     
@@ -328,8 +344,4 @@ struct FloatingActionButtons: View {
             .buttonStyle(PressedButtonStyle())
         }
     }
-}
-
-#Preview {
-    AddEntryView()
 }
